@@ -1,0 +1,62 @@
+{{ license }}
+#include <string>
+{%- macro recurse(structure) %}
+
+namespace {{ structure.name }} {
+
+static inline std::string get_docstring(std::string name, int variant=0) {
+
+    if (name == "test") {
+        return "test";
+
+{%- if structure.constants is defined %}
+{%- for constant in structure.constants %}
+
+    } else if(name == "{{ constant.name }}") {
+        return {{ structure[constant.name] }};
+
+{%- endfor %}
+{%- endif %}
+
+{%- if structure.classes is defined %}
+{%- for class in structure.classes %}
+
+    } else if(name == "{{ class.name }}") {
+        return {{ structure[class.name] }};
+
+{%- endfor %}
+{%- endif %}
+
+{%- if structure.functions is defined %}
+{%- for function in structure.functions %}
+
+    } else if(name == "{{ function.name }}") {
+        return R"(
+        {% filter indent(8) -%}
+        {{ structure[function.name] }}
+        {%- endfilter %}
+)";
+
+{%- endfor %}
+{%- endif %}
+
+    } else {
+        return "No documentation found.";
+    }
+
+}
+
+{%- if structure.modules is defined %}
+{%- for submodule in structure.modules %}
+
+    {{ recurse(structure[submodule]) }}
+
+{%- endfor %}
+{%- endif %}
+
+}
+
+{%- endmacro %}
+
+
+{{ recurse(api_structure) }}
