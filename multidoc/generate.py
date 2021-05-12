@@ -81,11 +81,24 @@ def generate_cpp_docstring(api_prefix, include_path, dest):
         with open(path, "r") as f:
             processed = raw = f.read()
             for match in re.finditer(CPP_PATTERN, raw):
-                n = match.group('name')
-                v = match.group('variant')
+                c = match.group('cls') if match.group('cls') else None
+                m = match.group('method') if match.group('method') else None
+                v = match.group('variant') if match.group('variant') else None
+                f = match.group('func') if match.group('func') else None
                 i = match.group('indent') if match.group('indent') else ''
-                docstring = t_structure[n][v] if v else t_structure[n]
-                processed = processed.replace(match.group(0), indent_line(docstring, i))
+                if c:
+                    # print(json.dumps(t_structure[c],indent=4))
+                    aux = t_structure[c][m]
+                elif f:
+                    aux = t_structure[f]
+                if v:
+                    try:
+                        aux = aux[v]
+                    except KeyError:
+                        raise KeyError(f"Overload ({v}) for {aux['name']} was "
+                                       f"not found, are the overloads stored as"
+                                       f" lists, as they should be?")
+                processed = processed.replace(match.group(0), indent_line(aux, i))
 
         # create destination directory structure, if it does not exist.
         if not os.path.exists(os.path.join(dest, *modules)):

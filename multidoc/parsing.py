@@ -5,8 +5,15 @@ import pathlib
 from multidoc.template import render_python_docstring
 from multidoc.template import render_cpp_docstring
 
-CPP_PATTERN = re.compile(r"(?P<indent>[^\S\r\n]+)?\/\/!\s+@get_docstring\((?P<name>[\w,.]+)?(,\s?(?P<variant>\w+))?\)",
-                         flags=re.MULTILINE)
+import logging
+
+logging.basicConfig(format='%(process)d-%(levelname)s-%(message)s')
+logger = logging.getLogger(__file__)
+logger.setLevel(logging.INFO)
+
+CPP_PATTERN = re.compile(
+    r"(?P<indent>[^\S\r\n]+)?\/\/!\s+@get_docstring\(((?P<cls>[\w]+)\.(?P<method>[\w]+))?(?P<func>\w+)?(,\s+?(overload(\s+)?=(\s+)?)?(?P<variant>[0-9]+))?\)",
+    flags=re.MULTILINE)
 PY_PATTERN = re.compile(r"(?P<indent>[^\S\r\n]+)?#\s+@get_docstring\((?P<name>[\w,.]+)?(,\s?(?P<variant>\w+))?\)",
                         flags=re.MULTILINE)
 
@@ -170,6 +177,7 @@ def parse_function(function, _locals):
     -------
 
     """
+    logger.info(f"Parsing function: {function['name']} with locals: {_locals}")
     if "cpp" in _locals.keys() and "py" in _locals.keys():
         assert (_locals["cpp"] == _locals["cpp"] & _locals["cpp"] is True) is False
     if "cpp" in _locals.keys():
@@ -178,7 +186,36 @@ def parse_function(function, _locals):
 
     if "py" in _locals.keys():
         if _locals["py"]:
+            # print(function)
             return render_python_docstring(function)
+
+
+def parse_method(function, _locals):
+    """
+
+    Parameters
+    ----------
+    function
+    _locals
+
+    Returns
+    -------
+
+    """
+    logger.info(f"Parsing method: {function['name']} with locals: {_locals}")
+    if "cpp" in _locals.keys() and "py" in _locals.keys():
+        assert (_locals["cpp"] == _locals["cpp"] & _locals["cpp"] is True) is False
+    if "cpp" in _locals.keys():
+        if _locals["cpp"]:
+            return render_cpp_docstring(function)
+
+    if "py" in _locals.keys():
+        if _locals["py"]:
+            # print(function)
+            return render_python_docstring(function)
+
+
+import json
 
 
 def parse_class(_class, _locals):
@@ -193,13 +230,14 @@ def parse_class(_class, _locals):
     -------
 
     """
+    logger.info(f"Parsing class: {_class['name']} with locals: {_locals}")
     _return = {}
-    _return[""]
-    if "methods" in _class.keys():
-        for function in _class["methods"]:
-            _return[function["name"]] = parse_function(function, _locals)
-
-    return _class
+    methods = _class["methods"] if "methods" in _class.keys() else None
+    if methods:
+        for method in methods:
+            _return[method["name"]] = parse_method(method, _locals)
+    _return["__docstring__"] = parse_method(_class, _locals)
+    return _return
 
 
 def parse_constant(constant, _locals):

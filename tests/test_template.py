@@ -10,10 +10,10 @@ from multidoc.template import DEFAULT_PYBIND_TEMPLATE, generate_pybind_docstring
 
 def test_pybind_template():
     structure = parse_api_docstrings("test-docstrings")
-    print(structure["name"])
+    # print(structure["name"])
 
-    s = json.dumps(structure, indent=4)
-    print(s)
+    # s = json.dumps(structure, indent=4)
+    # print(s)
     with open(os.path.join(TEMPLATE_DIR, "pybind_docstring.jinja2"), "r") as f:
         t = jinja2.Template(f.read())
 

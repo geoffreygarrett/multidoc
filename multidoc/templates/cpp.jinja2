@@ -15,11 +15,13 @@
 {% if extended_summary %}
 {{ indent_line(extended_summary, ' * ') }}
 {%- endif -%}
-{% if parameters %}
+{%- if parameters %}
  *
 {% for parameter in parameters %}
  * @param {{ parameter.name }}
+{% if parameter.description %}
 {{ indent_line(parameter.description, ' *        ') }}
+{%- endif %}
 {% endfor %}
 {% endif %}
 {% if returns %}
