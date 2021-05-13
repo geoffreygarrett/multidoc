@@ -1,4 +1,4 @@
-description: "This module provides an interface to the Spice package."
+summary: "This module provides an interface to the Spice package."
 notes: "None"
 
 # documentation of classes and functions are made distinct to perform

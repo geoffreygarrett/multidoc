@@ -1,0 +1,9 @@
+package:
+  name: test
+  name: test-cpp # [cpp]
+  name: test-py  # [py]
+
+modules:
+  - interface
+
+summary: x

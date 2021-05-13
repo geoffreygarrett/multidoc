@@ -1,6 +1,0 @@
-package:
-  name: test-cpp  # [cpp]
-#  name: test-py  # [py]
-
-modules:
-  - interface

@@ -1,4 +1,4 @@
-description: "Provides interfaces for external API."
+summary: "Provides interfaces for external API."
 
 modules:
   - spice

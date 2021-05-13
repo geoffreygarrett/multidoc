@@ -1,0 +1,11 @@
+package:
+  name: name-cpp    # [cpp]
+  name: name-py     # [py]
+
+modules:
+  - module
+  - module-py       # [py]
+  - module-cpp      # [cpp]
+  - module-not-cpp  # [not cpp]
+  - module-not-py   # [not py]
+  - module-both     # [py and cpp]

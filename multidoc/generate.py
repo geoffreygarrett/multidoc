@@ -3,7 +3,8 @@ import os
 import jinja2
 from pathlib import Path
 from multidoc.template import TEMPLATE_DIR
-from multidoc.parsing import parse_api_docstrings, CPP_TAG
+from multidoc.parsing import parse_api_docstrings
+from multidoc.regex import CPP_TAG
 from multidoc.utils import parts, indent_line, snake2pascal
 
 DEFAULT_PYBIND_TEMPLATE = os.path.join(TEMPLATE_DIR, "pybind_docstring.jinja2")

@@ -1,0 +1,88 @@
+from . import logger
+import yaml
+from multidoc.regex import API_TAG
+
+
+def yaml2dict(path, _locals: dict = None, include_name_error=False):
+    """
+
+    Parameters
+    ----------
+    path : os.PathLike or str
+        Path of the ``yaml`` file to be loaded.
+    _locals : Dict[str, Any]
+        List of definitions to parse in the yaml files. See examples for how
+        they affect yaml loading.
+    include_name_error : bool, default=True
+        Include tag evaluations that return a NameError
+
+    Examples
+    ========
+    Given the following example ``yaml`` file:
+
+    .. code-block:: yaml
+        :caption: example.yaml
+
+        package:
+          name: name-cpp    # [cpp]
+          name: name-py     # [py]
+
+        modules:
+          - module
+          - module-py       # [py]
+          - module-cpp      # [cpp]
+          - module-not-cpp  # [not cpp]
+          - module-not-py   # [not py]
+          - module-both     # [py or cpp]
+          - module-both     # [py and cpp]
+
+    >>> yaml2dict("../tests/example.yaml")
+    {'package': None, 'modules': ['module']}
+
+    >>> yaml2dict("../tests/example.yaml", _locals={"cpp":True})
+    {'package': {'name': 'name-cpp'}, 'modules': ['module', 'module-cpp']}
+
+    >>> yaml2dict("../tests/example.yaml", _locals={"py": True})
+    {'package': {'name': 'name-py'}, 'modules': ['module', 'module-py']}
+
+    >>> yaml2dict("../tests/example.yaml", {"cpp": True, "py": False})
+    {'package': {'name': 'name-cpp'}, 'modules': ['module', 'module-cpp', 'module-not-py']}
+
+
+    Returns
+    -------
+    dict
+        ``yaml`` loaded into memory as Python dict, parsed for definitions.
+
+    """
+    # update the local variable space for eval of tag
+    locals().update(_locals) if _locals else None
+
+    # open the yaml file!
+    with open(path) as file:
+        logger.info(f"Parsing yaml file :{file}")
+
+        # read the raw lines
+        raw_lines = file.readlines()
+
+        # create list for processed lines
+        processed_lines = []
+
+        # iterate through lines
+        for line in raw_lines:
+            match = API_TAG.match(line)
+            if match:  # there's an expr on this line
+                try:
+                    # if the expr is True, add to lines, else ignore
+                    if eval(match.group("expr")):
+                        processed_lines += line
+                except NameError:
+                    # if the expr raises a NameError (e.g. undefined var in expr)
+                    if include_name_error:
+                        processed_lines += line
+                    else:
+                        pass
+            else:
+                processed_lines += line
+        # apply line check truth to all raw lines, retrieving those that return true
+        return yaml.load("".join(processed_lines), yaml.Loader)

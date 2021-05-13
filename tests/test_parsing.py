@@ -1,7 +1,22 @@
-import re
-from pathlib import Path
-import yaml
 from multidoc.parsing import parse_api_docstrings
+from multidoc.parsing import yaml2dict
+
+
+def test_yaml_parser():
+    t1 = yaml2dict("example.yaml")
+    t2 = yaml2dict("example.yaml", {"py": True})
+    t3 = yaml2dict("example.yaml", {"cpp": True})
+    t4 = yaml2dict("example.yaml", {"cpp": True, "py": True})
+    t5 = yaml2dict("example.yaml", {"cpp": True, "py": False})
+    t6 = yaml2dict("example.yaml", {"cpp": False, "py": True})
+    t7 = yaml2dict("example.yaml", {"cpp": False, "py": False})
+    assert t1 == {'package': None, 'modules': ['module']}
+    assert t2 == {'package': {'name': 'name-py'}, 'modules': ['module', 'module-py']}
+    assert t3 == {'package': {'name': 'name-cpp'}, 'modules': ['module', 'module-cpp']}
+    assert t4 == {'package': {'name': 'name-py'}, 'modules': ['module', 'module-py', 'module-cpp', 'module-both']}
+    assert t5 == {'package': {'name': 'name-cpp'}, 'modules': ['module', 'module-cpp', 'module-not-py']}
+    assert t6 == {'package': {'name': 'name-py'}, 'modules': ['module', 'module-py', 'module-not-cpp']}
+    assert t7 == {'package': None, 'modules': ['module', 'module-not-cpp', 'module-not-py']}
 
 
 def test_parsing_module_not_found():
@@ -13,26 +28,5 @@ def test_parsing_module_not_found():
 
 def test_parsing():
     structure = parse_api_docstrings("test-docstrings")
-    print("\n")
-    for x in structure["interface"]["spice"]["functions"]:
-        print(x)
-    # print(structure)
+    print(structure)
 
-
-def test_parse_cpp():
-    test_file = list(Path("../../../tudat").rglob("spiceInterface.h"))[0]
-    parse_file(test_file, CPP_PATTERN)
-
-
-if __name__ == "__main__":
-    test_parsing()
-
-    api = parse_api_docstrings("../docstrings")
-    print(api)
-    # generate_pybind_docstrings(
-    #
-    # )
-    #
-    # replace_cpp_docstrings(
-    #
-    # )
