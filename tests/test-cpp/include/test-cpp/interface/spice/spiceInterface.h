@@ -44,7 +44,7 @@ namespace tudat {
 
 namespace spice_interface {
 
-//! @get_docstring(convert_julian_date_to_ephemeris_time)
+//! @get_docstring(convertJulianDateToEphemerisTime)
 double convertJulianDateToEphemerisTime(const double julianDate);
 
 //! @get_docstring(convert_ephemeris_time_to_julian_date)

@@ -1,5 +1,5 @@
-package:
-  name: test
+config:
+  name: test     # [not cpp and not py]
   name: test-cpp # [cpp]
   name: test-py  # [py]
 

@@ -26,14 +26,21 @@ namespace tudat
 namespace ephemerides
 {
 
-//! @get_docstring(SpiceEphemeris.__docstring__)
+/// Ephemeris derived class which retrieves the state of a body directly from the SPICE library.
+/**
+ * Ephemeris derived class which retrieves the state of a body directly from the SPICE library.
+ * The body of which the ephemeris is to be retrieved, as well as the origin and orientation
+ * of the reference frame in which the states are returned, and any corrections that are
+ * applied, are defined once during object construction.
+ */
 class SpiceEphemeris : public Ephemeris
 {
 public:
 
     using Ephemeris::getCartesianState;
 
-    //! @get_docstring(SpiceEphemeris.ctor)
+    /**
+     */
     SpiceEphemeris( const std::string& targetBodyName, const std::string& observerBodyName,
                     const bool correctForStellarAberration = true,
                     const bool correctForLightTimeAberration = true,
@@ -41,7 +48,13 @@ public:
                     const std::string& referenceFrameName = "ECLIPJ2000",
                     const double referenceJulianDay = basic_astrodynamics::JULIAN_DAY_ON_J2000 );
 
-    //! @get_docstring(SpiceEphemeris.getCartesianState)
+    /// Get Cartesian state from ephemeris.
+    /**
+     * Returns Cartesian state from ephemeris at given Julian day.
+     *
+     * @param secondsSinceEpoch
+     *        Seconds since epoch at which ephemeris is to be evaluated.
+     */
     Eigen::Vector6d getCartesianState( const double secondsSinceEpoch );
 
 private:

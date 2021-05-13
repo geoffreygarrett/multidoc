@@ -3,7 +3,7 @@ import os
 import jinja2
 from pathlib import Path
 from multidoc.template import TEMPLATE_DIR
-from multidoc.parsing import parse_api_docstrings
+from multidoc.parsing import parse_api_declaration
 from multidoc.regex import CPP_TAG
 from multidoc.utils import parts, indent_line, snake2pascal
 
@@ -58,15 +58,33 @@ def recurse_dict(dict, keys):
 import re
 
 
+class ClassNotDeclaredError(Exception):
+    ...
+
+
+class MethodNotDeclaredError(Exception):
+    ...
+
+
+class FunctionNotDeclaredError(Exception):
+    ...
+
+
+class OverloadNotFoundError(Exception):
+    ...
+
+
 def generate_cpp_docstring(api_prefix, include_path, dest):
     # load structure from api definition
-    structure = parse_api_docstrings(api_prefix, _locals={"cpp": True})
+    structure = parse_api_declaration(api_prefix, local={"cpp": True})
+    print(structure["interface"]["spice"]["SpiceEphemeris"])
 
     for path in Path(include_path).rglob("*.h"):
         _parts = parts(path)
         include_idx = _parts.index(os.path.basename(include_path))
         module_structure = _parts[include_idx + 1:]
-        assert module_structure[0] == structure["name"]  # currently, include/<package_name> is mandatory
+        assert module_structure[0] == structure[
+            "name"]  # currently, include/<package_name> is mandatory
 
         # i.e. a, *b, c = [0, 1, 2, 3, 4] -> a=0; b=[1,2,3]; c=4
         package_name, *modules, filename = module_structure
@@ -88,17 +106,37 @@ def generate_cpp_docstring(api_prefix, include_path, dest):
                 f = match.group('func') if match.group('func') else None
                 i = match.group('indent') if match.group('indent') else ''
                 if c:
-                    aux = t_structure[c][m]
+                    try:
+                        aux = t_structure[c]
+                    except KeyError:
+                        raise ClassNotDeclaredError(f"{c} was not found in "
+                                                    f"{'/'.join(modules)} for "
+                                                    f"{package_name} API "
+                                                    f"declaration.")
+                    try:
+                        aux = aux[m]
+                    except KeyError:
+                        raise MethodNotDeclaredError(f"{m} was not found in "
+                                                     f"{'/'.join(modules + [c])} for "
+                                                     f"{package_name} API "
+                                                     f"declaration.")
                 elif f:
-                    aux = t_structure[f]
+                    try:
+                        aux = t_structure[f]
+                    except KeyError:
+                        raise FunctionNotDeclaredError(f"{f} was not found in "
+                                                       f"{'/'.join(modules)} for "
+                                                       f"{package_name} API ")
                 if v:
                     try:
                         aux = aux[v]
                     except KeyError:
-                        raise KeyError(f"Overload ({v}) for {aux['name']} was "
-                                       f"not found, are the overloads stored as"
-                                       f" lists, as they should be?")
-                processed = processed.replace(match.group(0), indent_line(aux, i))
+                        raise OverloadNotFoundError(
+                            f"Overload ({v}) for {aux['name']} was "
+                            f"not found, are the overloads stored as"
+                            f" lists, as they should be?")
+                processed = processed.replace(match.group(0),
+                                              indent_line(aux, i))
 
         # create destination directory structure, if it does not exist.
         if not os.path.exists(os.path.join(dest, *modules)):
@@ -112,9 +150,12 @@ def generate_cpp_docstring(api_prefix, include_path, dest):
 def generate_cpp_documented(api_prefix, target_src):
     path_documented, name = _generate_documented(target_src)
     generate_cpp_docstring(api_prefix=api_prefix,
-                           dest=os.path.join(path_documented, f"include/{name}"),
+                           dest=os.path.join(path_documented,
+                                             f"include/{name}"),
                            include_path=os.path.join(target_src, "include"))
-    generate_cpp_sphinx(api_prefix=api_prefix, dest_dir=os.path.join(path_documented, 'docs', 'sphinx', 'source'))
+    generate_cpp_sphinx(api_prefix=api_prefix,
+                        dest_dir=os.path.join(path_documented, 'docs',
+                                              'sphinx', 'source'))
 
 
 import json
@@ -128,7 +169,7 @@ def generate_cpp_sphinx(
         os.makedirs(dest_dir)
 
     # load api declaration structure
-    structure = parse_api_docstrings(api_prefix, _locals={"cpp": True})
+    structure = parse_api_declaration(api_prefix, local={"cpp": True})
     # print(json.dumps(structure, indent=4))  # for inspection of structure
     with open(template, "r") as f:
         t = jinja2.Template(f.read())
@@ -138,7 +179,8 @@ def generate_cpp_sphinx(
     namespace_list = [structure['name']]
 
     # Generate index.rst
-    s = t.render(structure=structure, namespace_list=namespace_list, title="API Reference")
+    s = t.render(structure=structure, namespace_list=namespace_list,
+                 title="API Reference")
     t.globals["snake2pascal"] = snake2pascal
     with open(os.path.join(dest_dir, f"index.rst"), "w") as f:
         f.write(s)
@@ -148,13 +190,17 @@ def generate_cpp_sphinx(
         if "modules" in structure.keys():
             for module in structure['modules']:
                 recurse(structure[module], namespace_list + [module])
-            s = t.render(structure=structure, namespace_list=namespace_list, title=title)
-            with open(os.path.join(dest_dir, f"{structure['name']}.rst"), "w") as f:
+            s = t.render(structure=structure, namespace_list=namespace_list,
+                         title=title)
+            with open(os.path.join(dest_dir, f"{structure['name']}.rst"),
+                      "w") as f:
                 f.write(s)
 
         else:
-            s = t.render(structure=structure, namespace_list=namespace_list, title=title)
-            with open(os.path.join(dest_dir, f"{structure['name']}.rst"), "w") as f:
+            s = t.render(structure=structure, namespace_list=namespace_list,
+                         title=title)
+            with open(os.path.join(dest_dir, f"{structure['name']}.rst"),
+                      "w") as f:
                 f.write(s)
 
     for module in structure["modules"]:
@@ -169,7 +215,7 @@ def generate_py_sphinx(
         os.makedirs(dest_dir)
 
     # load api declaration structure
-    structure = parse_api_docstrings(api_prefix, _locals={"py": True})
+    structure = parse_api_declaration(api_prefix, local={"py": True})
 
     # read pybind docstrings template
     with open(template, "r") as f:
@@ -180,7 +226,8 @@ def generate_py_sphinx(
     namespace_list = [structure['name']]
 
     # Generate index.rst
-    s = t.render(structure=structure, namespace_list=namespace_list, title="API Reference")
+    s = t.render(structure=structure, namespace_list=namespace_list,
+                 title="API Reference")
     with open(os.path.join(dest_dir, f"index.rst"), "w") as f:
         f.write(s)
 
@@ -191,13 +238,15 @@ def generate_py_sphinx(
                 recurse(structure[module], namespace_list + [module])
             s = t.render(structure=structure, namespace_list=namespace_list,
                          title='``' + ".".join(namespace_list) + '``')
-            with open(os.path.join(dest_dir, f"{structure['name']}.rst"), "w") as f:
+            with open(os.path.join(dest_dir, f"{structure['name']}.rst"),
+                      "w") as f:
                 f.write(s)
 
         else:
             s = t.render(structure=structure, namespace_list=namespace_list,
                          title='``' + ".".join(namespace_list) + '``')
-            with open(os.path.join(dest_dir, f"{structure['name']}.rst"), "w") as f:
+            with open(os.path.join(dest_dir, f"{structure['name']}.rst"),
+                      "w") as f:
                 f.write(s)
 
     for module in structure["modules"]:
@@ -213,7 +262,8 @@ def generate_pybind_documented(api_prefix, target_src):
                                                        "docstrings.h"))
     # print(os.path.join(path_documented, 'docs', 'source'))
     generate_py_sphinx(api_prefix=api_prefix,
-                       dest_dir=os.path.join(path_documented, 'docs', 'source'))
+                       dest_dir=os.path.join(path_documented, 'docs',
+                                             'source'))
 
 
 if __name__ == "__main__":

@@ -40,8 +40,8 @@ py_args = dict(
 
 # render the templates to source code
 def render_cpp_docstring(args):
-    return t.cpp.render(**args, **cpp_args)
+    return t.cpp.render(**args.dict(), **cpp_args)
 
 
 def render_python_docstring(args):
-    return t.py.render(**args, **py_args)
+    return t.py.render(**args.dict(), **py_args)

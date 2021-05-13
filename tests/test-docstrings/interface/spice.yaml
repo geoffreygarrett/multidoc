@@ -1,5 +1,5 @@
 summary: "This module provides an interface to the Spice package."
-notes: "None"
+notes: "Test notes!"
 
 # documentation of classes and functions are made distinct to perform
 # sanity checks on the provided fields below. i.e. Class constructors don't need the return detailed.
@@ -14,7 +14,10 @@ classes:
       of the reference frame in which the states are returned, and any corrections that are
       applied, are defined once during object construction.
     methods:
-      - name: get_cartesian_state
+      - name: ctor                     # [cpp]
+      - name: __init__                 # [py]
+      - name: get_cartesian_state  # [py]
+      - name: getCartesianState    # [cpp]
         short_summary: "Get Cartesian state from ephemeris."
         extended_summary: " Returns Cartesian state from ephemeris at given Julian day."
         parameters:
@@ -26,7 +29,8 @@ classes:
 
 
 functions:
-  - name: "convert_julian_date_to_ephemeris_time"
+  - name: "convertJulianDateToEphemerisTime"        # [cpp]
+  - name: "convert_julian_date_to_ephemeris_time"   # [py]
     deprecation_warning:
       "test"
     short_summary: "Convert a Julian date to ephemeris time (equivalent to TDB in Spice)."

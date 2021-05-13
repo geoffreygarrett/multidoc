@@ -17,7 +17,7 @@ def test_cpp_documented():
     assert os.path.exists(".test-cpp-documented")
 
     # remove the generated documented source
-    shutil.rmtree(".test-cpp-documented")
+    # shutil.rmtree(".test-cpp-documented")
 
 
 def test_pybind_documented():

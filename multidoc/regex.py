@@ -52,7 +52,8 @@ PYTHON_TAG = re.compile(
 
 API_TAG = re.compile(r".*#\s*\[(?P<expr>.*)\]")
 
-
+r_package = re.compile(r".*__package__(.yml|.yaml)")
+r_module = re.compile(r".*(?P<module>\w+)(.yml|.yaml)")
 # import re
 #
 # r_yaml: re.compile(r"(?P<name>\w+)(?P<ext>.yml|.yaml)")

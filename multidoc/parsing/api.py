@@ -4,161 +4,89 @@ from multidoc.template import render_python_docstring
 from multidoc.template import render_cpp_docstring
 from multidoc.parsing.io import yaml2dict
 from multidoc.parsing import logger
+from multidoc.regex import r_package, r_module
 
 
-def recursive_parse(module_prefix, local: dict = None):
-    local = local if local is not None else {}
-    structure = {}
-
-    # module is defined as directory
-    if os.path.isdir(module_prefix):
-        has_submodules = True
-        module_yaml = yaml2dict(os.path.join(module_prefix, "__module__.yaml"), local)
-        structure["modules"] = module_yaml["modules"]
-
-    # module is defined as .yaml file
-    elif os.path.isfile(str(module_prefix) + ".yaml"):
-        has_submodules = False
-        module_yaml = yaml2dict(str(module_prefix) + ".yaml", local)
-
-    # module is defined as .yml file
-    elif os.path.isfile(str(module_prefix) + ".yml"):
-        has_submodules = False
-        module_yaml = yaml2dict(str(module_prefix) + ".yml", local)
-
-    # module api is not defined correctly
-    else:
-        raise ModuleNotFoundError("module api is not defined correctly")
-
-    structure["name"] = os.path.basename(module_prefix)
-
-    # module level functions
-    if "functions" in module_yaml.keys():
-        structure["functions"] = module_yaml["functions"]
-        for function in module_yaml["functions"]:
-            structure[function["name"]] = parse_function(function, local)
-
-    # module level functions
-    if "classes" in module_yaml.keys():
-        structure["classes"] = module_yaml["classes"]
-        for _class in module_yaml["classes"]:
-            structure[_class["name"]] = parse_class(_class, local)
-
-    # module level functions
-    if "constants" in module_yaml.keys():
-        structure["constants"] = module_yaml["constants"]
-        for constant in module_yaml["constants"]:
-            structure[constant["name"]] = parse_constant(constant, local)
-
-    if has_submodules:
-        # iterate through api level modules
-        for submodule in structure["modules"]:
-            submodule_prefix = os.path.join(module_prefix, submodule)
-            structure[submodule] = recursive_parse(submodule_prefix, local)
-        return structure
-    else:
-        return structure
-
-
-# from abc import ABC, abstractmethod
-#
-#
-# class BaseDocstring(ABC):
-#
-#     @abstractmethod
-#     def render(self, structure):
-#         pass
-#
-#
-# class CppDocstring(BaseDocstring):
-#     _locals = {"cpp": True}
-#
-#     def render(self, structure):
-#         return render_cpp_docstring(structure)
-
-
-def parse_function(function, _locals):
+def parse_function(function, local):
     """
 
     Parameters
     ----------
     function
-    _locals
+    local
 
     Returns
     -------
 
     """
-    logger.info(f"Parsing function: {function['name']} with locals: {_locals}")
-    if "cpp" in _locals.keys() and "py" in _locals.keys():
-        assert (_locals["cpp"] == _locals["cpp"] & _locals["cpp"] is True) is False
-    if "cpp" in _locals.keys():
-        if _locals["cpp"]:
+    logger.info(f"Parsing function: {function.name} with locals: {local}")
+    if "cpp" in local.keys() and "py" in local.keys():
+        assert (local["cpp"] == local["cpp"] & local[
+            "cpp"] is True) is False
+    if "cpp" in local.keys():
+        if local["cpp"]:
             return render_cpp_docstring(function)
 
-    if "py" in _locals.keys():
-        if _locals["py"]:
-            # print(function)
+    if "py" in local.keys():
+        if local["py"]:
             return render_python_docstring(function)
 
 
-def parse_method(function, _locals):
+def parse_method(function, local):
     """
 
     Parameters
     ----------
     function
-    _locals
+    local
 
     Returns
     -------
 
     """
-    logger.info(f"Parsing method: {function['name']} with locals: {_locals}")
-    if "cpp" in _locals.keys() and "py" in _locals.keys():
-        assert (_locals["cpp"] == _locals["cpp"] & _locals["cpp"] is True) is False
-    if "cpp" in _locals.keys():
-        if _locals["cpp"]:
+    logger.info(f"Parsing method: {function.name} with locals: {local}")
+    if "cpp" in local.keys() and "py" in local.keys():
+        assert (local["cpp"] == local["cpp"] & local[
+            "cpp"] is True) is False
+    if "cpp" in local.keys():
+        if local["cpp"]:
             return render_cpp_docstring(function)
 
-    if "py" in _locals.keys():
-        if _locals["py"]:
-            # print(function)
+    if "py" in local.keys():
+        if local["py"]:
             return render_python_docstring(function)
 
 
 import json
 
 
-def parse_class(_class, _locals):
+def parse_class(cls, local):
     """
 
     Parameters
     ----------
-    _class
-    _locals
+    cls
+    local
 
     Returns
     -------
 
     """
-    logger.info(f"Parsing class: {_class['name']} with locals: {_locals}")
+    logger.info(f"Parsing class: {cls.name} with locals: {local}")
     _return = {}
-    methods = _class["methods"] if "methods" in _class.keys() else None
-    if methods:
-        for method in methods:
-            _return[method["name"]] = parse_method(method, _locals)
-    _return["__docstring__"] = parse_method(_class, _locals)
+    for method in cls.methods:
+        _return[method.name] = parse_method(method, local)
+    _return["__docstring__"] = parse_method(cls, local)
     return _return
 
 
-def parse_constant(constant, _locals):
+def parse_constant(constant, local):
     """
 
     Parameters
     ----------
     constant
-    _locals
+    local
 
     Returns
     -------
@@ -166,62 +94,156 @@ def parse_constant(constant, _locals):
     """
     return constant
 
-from multidoc.parsing.models import Module
+
+from multidoc.parsing.models import Module, Package
 
 
-def parse_api_docstrings(prefix: str, local: dict = None):
+def parse_api_declaration(path: str, local: dict = None, parent=None):
     """
 
     Parameters
     ----------
-    prefix
+    path
     local
+    parent
 
     Returns
     -------
 
     """
     structure = dict()
-    structure["prefix"] = prefix
     local = local if local is not None else dict()
 
-    r = re.compile(r"__api__.(?P<ext>\w+)")
-    api_file = list(filter(r.match, os.listdir(prefix)))
+    # if directory given, treats it as package declaration
+    if os.path.isdir(path):
 
-    if len(api_file) == 0:
-        raise ModuleNotFoundError("__api__.yaml/yml not found in prefix.")
-    elif len(api_file) > 1:
-        raise ModuleNotFoundError("Multiple __api__.yaml/yml found in prefix.")
+        # look for package declaration __package__(.yml|.yaml)
+        files = list(filter(r_package.match, os.listdir(path)))
 
-    # load module from __module__.yaml/yml
-    module = Module.from_yaml(os.path.join(prefix, api_file[0]), local)
+        if len(files) == 0:
+            raise ModuleNotFoundError("__package__.yaml/yml not found in "
+                                      "directory path.")
+        elif len(files) > 1:
+            raise ModuleNotFoundError("Multiple __package__.yaml/yml files "
+                                      "found in directory path.")
+        else:
+            module = Package.from_yaml(os.path.join(path, files[0]), local)
 
-    # are there submodules present?
-    structure["modules"] = module.modules
-    structure["name"] = module.package.name
+            # define type as package.
+            structure["type"] = "package"
+            structure["path"] = path
+            structure["file"] = files[0]
+            structure["_implicit_name"] = os.path.basename(path)
+
+    # if file given, treats it as module declaration
+    elif os.path.isfile(path):
+
+        _, extension = os.path.splitext(path)
+        #
+        if extension == ".yaml" or extension == ".yml":
+
+            if not r_package.match(path):
+                module = Module.from_yaml(path)
+
+                # define type as package.
+                structure["type"] = "module"
+                structure["path"] = os.path.dirname(path)
+                structure["file"] = os.path.basename(path)
+                structure["_implicit_name"] = \
+                    os.path.split(os.path.basename(path))[0]
+            else:
+                module = Package.from_yaml(path)
+                structure["type"] = "package"
+                structure["path"] = os.path.dirname(path)
+                structure["file"] = os.path.basename(path)
+                structure["_implicit_name"] = \
+                    os.path.split(os.path.dirname(path))[0]
+        else:
+            raise ModuleNotFoundError("Only .yml or .yaml files can be used "
+                                      "to declare modules and packages.")
+
+    # then path was given without yml/yaml extension.
+    # (i.e. directory/module, where directory/module.yml/yaml exists)
+    # TODO: Is this really necessary?
+    elif list(
+            filter(re.compile(fr"{os.path.basename(path)}(.yml|.yaml)").match,
+                   os.listdir(os.path.dirname(path)))):
+
+        matches = list(
+            filter(re.compile(fr"{os.path.basename(path)}(.yml|.yaml)").match,
+                   os.listdir(os.path.dirname(path))))
+        basename = os.path.basename(path)
+
+        if len(matches) > 1:
+            raise ModuleNotFoundError(f"Multiple {basename}.yaml/yml files "
+                                      "found for given path.")
+        else:
+            module = Module.from_yaml(
+                os.path.join(os.path.dirname(path), matches[0]), local)
+
+            # define type as package.
+            structure["type"] = "module"
+            structure["path"] = os.path.dirname(path)
+            structure["file"] = matches[0]
+            structure["_implicit_name"] = os.path.split(
+                os.path.basename(path))[-1]
+
+    # user gives path that is neither file nor directory.
+    else:
+        raise ModuleNotFoundError("Path provided was not recognized as a "
+                                  "directory containing a __package__.yaml/yml"
+                                  "or as a module.yml/.yaml declaration.")
+
+    structure.update(module.dict())
+
+    if module.config:
+        # parse multidoc related configuration
+        if module.config.name:  # package
+            structure["name"] = module.config.name
+        else:
+            structure["name"] = structure["_implicit_name"]
+
+        if module.config.version:
+            structure["version"] = module.config.version
+        else:
+            structure["version"] = None
+    else:
+        structure["name"] = structure["_implicit_name"]
+        structure["version"] = None
 
     # module level functions
     if module.functions:
-        structure["functions"] = module.functions
         for function in module.functions:
             structure[function.name] = parse_function(function, local)
 
     # module level functions
     if module.classes:
-        structure["classes"] = api_yaml["classes"]
-        for _class in api_yaml["classes"]:
-            structure[_class["name"]] = parse_class(_class, local)
+        for cls in module.classes:
+            structure[cls.name] = parse_class(cls, local)
 
     # module level functions
     if module.constants:
-        structure["constants"] = api_yaml["constants"]
-        for constant in api_yaml["constants"]:
-            structure[constant["name"]] = parse_constant(constant, local)
+        for constant in module.constants:
+            structure[constant.name] = parse_constant(constant, local)
 
     # iterate through api level modules
-    if module.modules:
+    if type(module) == Package:
         for submodule in module.modules:
-            module_path = os.path.join(prefix, module)
-            structure[module] = recursive_parse(module_path, local)
+            module_path = os.path.join(structure["path"], submodule)
+            structure[submodule] = parse_api_declaration(module_path, local,
+                                                         parent=structure)
+            # TODO: Figure out how to deal with submodule name clashes with
+            #  reserved names. Hide all docstrings behind __docs__ key?
 
     return structure
+
+
+if __name__ == "__main__":
+    s = parse_api_declaration("../../tests/test-docstrings",
+                              local={"py": True})
+    if s["summary"]:
+        print(s["summary"])
+    # print(s)
+    import json
+
+    json.dumps(s, indent=4)

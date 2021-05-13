@@ -4,7 +4,6 @@ from multidoc.parsing.io import yaml2dict
 
 
 class FileBased(BaseModel):
-    base_file: str
 
     @classmethod
     def from_yaml(cls, path, local: dict = None):
@@ -15,25 +14,25 @@ class FileBased(BaseModel):
 class Parameter(BaseModel):
     name: str
     type: Optional[str]
-    desc: Optional[str]
+    description: Optional[str]
 
 
 class Returns(BaseModel):
     name: Optional[str]
     type: Optional[str]
-    desc: str
+    description: str
 
 
 class Yields(BaseModel):
     name: Optional[str]
     type: Optional[str]
-    desc: Optional[str]
+    description: Optional[str]
 
 
 class Raises(BaseModel):
     name: str
     type: Optional[str]
-    desc: Optional[str]
+    description: Optional[str]
 
 
 class Function(BaseModel):
@@ -43,9 +42,9 @@ class Function(BaseModel):
     deprecation_warning: Optional[str]
     extended_summary: Optional[str]
     parameters: Optional[List[Parameter]]
-    returns: Optional[List[Returns] or Returns]
+    returns: Optional[Returns] or Optional[List[Returns]]
     yields: Optional[List[Yields] or Yields]
-    other_parameters: Optional[List[Parameter] or Parameter]
+    other_parameters: Optional[List[Parameter]]
     raises: Optional[List[Raises] or Raises]
     warns: Optional[List[Raises] or Raises]
     warnings: Optional[str]
@@ -82,7 +81,14 @@ class Constant(BaseModel):
     examples: Optional[str]
 
 
+class Config(BaseModel):
+    name: Optional[str]
+    version: Optional[str]
+
+
 class Module(FileBased):
+    config: Optional[Config]
+
     summary: Optional[str]
     extended_summary: Optional[str]
     routine_listings: Optional[str]
@@ -92,22 +98,10 @@ class Module(FileBased):
     examples: Optional[str]
 
     # MODULE structure
-    classes: Optional[List[str]]
-    functions: Optional[List[str]]
-    constants: Optional[List[str]]
+    classes: Optional[List[Class]]
+    functions: Optional[List[Function]]
+    constants: Optional[List[Constant]]
 
 
-class Package(FileBased):
-    summary: Optional[str]
-    extended_summary: Optional[str]
-    routine_listings: Optional[str]
-    see_also: Optional[str]
-    notes: Optional[str]
-    references: Optional[str]
-    examples: Optional[str]
-
-    # MODULE structure
-    classes: Optional[List[str]]
-    functions: Optional[List[str]]
-    constants: Optional[List[str]]
-    modules: Optional[List[Module]]
+class Package(Module):
+    modules: Optional[List[str]]
