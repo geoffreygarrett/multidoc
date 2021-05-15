@@ -15,8 +15,10 @@ __all__ = [
     'Class',
     'Function',
     'Constant',
+    'Config',
     'FileBased',
     'Returns',
     'Parameter',
     'yaml2dict',
+    'parse_api_declaration'
     ]

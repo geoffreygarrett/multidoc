@@ -4,8 +4,9 @@ import jinja2
 from pathlib import Path
 from multidoc.template import TEMPLATE_DIR
 from multidoc.parsing import parse_api_declaration
-from multidoc.regex import CPP_TAG
+from multidoc.regex import p_cpp_tag
 from multidoc.utils import parts, indent_line, snake2pascal
+from multidoc.error import *
 
 DEFAULT_PYBIND_TEMPLATE = os.path.join(TEMPLATE_DIR, "pybind_docstring.jinja2")
 
@@ -58,22 +59,6 @@ def recurse_dict(dict, keys):
 import re
 
 
-class ClassNotDeclaredError(Exception):
-    ...
-
-
-class MethodNotDeclaredError(Exception):
-    ...
-
-
-class FunctionNotDeclaredError(Exception):
-    ...
-
-
-class OverloadNotFoundError(Exception):
-    ...
-
-
 def generate_cpp_docstring(api_prefix, include_path, dest):
     # load structure from api definition
     structure = parse_api_declaration(api_prefix, local={"cpp": True})
@@ -99,7 +84,7 @@ def generate_cpp_docstring(api_prefix, include_path, dest):
         # open the .hpp file and replace all tags with docstrings - if found.
         with open(path, "r") as f:
             processed = raw = f.read()
-            for match in re.finditer(CPP_TAG, raw):
+            for match in re.finditer(p_cpp_tag, raw):
                 c = match.group('cls') if match.group('cls') else None
                 m = match.group('method') if match.group('method') else None
                 v = match.group('variant') if match.group('variant') else None

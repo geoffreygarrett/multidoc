@@ -1,10 +1,10 @@
 from . import logger
 import yaml
-from multidoc.regex import API_TAG
+from multidoc.regex import p_api_tag
 
 
 def yaml2dict(path, _locals: dict = None, include_name_error=False):
-    """
+    """Yaml file parser.
 
     Parameters
     ----------
@@ -70,7 +70,7 @@ def yaml2dict(path, _locals: dict = None, include_name_error=False):
 
         # iterate through lines
         for line in raw_lines:
-            match = API_TAG.match(line)
+            match = p_api_tag.match(line)
             if match:  # there's an expr on this line
                 try:
                     # if the expr is True, add to lines, else ignore

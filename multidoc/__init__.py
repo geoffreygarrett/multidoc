@@ -9,17 +9,13 @@ from .generate import (generate_cpp_documented,
 from . import generate
 from . import parsing
 from . import template
-
+from . import testing
+from . import regex
 
 __all__ = [
     "parsing",
     "generate",
     "template",
-    # generate_cpp_documented,
-    # generate_pybind_documented,
-    # generate_pybind_docstring,
-    # generate_cpp_docstring,
-    # generate_cpp_sphinx,
-    # generate_py_sphinx,
-    # TEMPLATE_DIR
+    "testing",
+    "regex"
 ]

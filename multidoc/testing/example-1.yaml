@@ -1,0 +1,6 @@
+classes:
+  - name: ExampleClass
+    methods:
+      - name: constructor
+      - name: foo_method
+      # there is no bar_method!

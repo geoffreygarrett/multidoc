@@ -4,7 +4,7 @@ from multidoc.template import render_python_docstring
 from multidoc.template import render_cpp_docstring
 from multidoc.parsing.io import yaml2dict
 from multidoc.parsing import logger
-from multidoc.regex import r_package, r_module
+from multidoc.regex import p_package_file, p_module_file
 
 
 def parse_function(function, local):
@@ -118,7 +118,7 @@ def parse_api_declaration(path: str, local: dict = None, parent=None):
     if os.path.isdir(path):
 
         # look for package declaration __package__(.yml|.yaml)
-        files = list(filter(r_package.match, os.listdir(path)))
+        files = list(filter(p_package_file.match, os.listdir(path)))
 
         if len(files) == 0:
             raise ModuleNotFoundError("__package__.yaml/yml not found in "
@@ -142,7 +142,7 @@ def parse_api_declaration(path: str, local: dict = None, parent=None):
         #
         if extension == ".yaml" or extension == ".yml":
 
-            if not r_package.match(path):
+            if not p_package_file.match(path):
                 module = Module.from_yaml(path)
 
                 # define type as package.
