@@ -1,3 +1,5 @@
+sphinxcontrib-napoleon
 pydantic
 jinja2
 pyyaml
+furo
