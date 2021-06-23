@@ -1,7 +1,7 @@
 import os
 from .generate import (generate_cpp_documented,
                        generate_pybind_documented,
-                       generate_pybind_docstring,
+                       generate_docstring_header,
                        generate_cpp_docstring,
                        generate_cpp_sphinx,
                        generate_py_sphinx)

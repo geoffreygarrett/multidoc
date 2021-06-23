@@ -2,7 +2,10 @@ from textwrap import indent
 
 
 def indent_line(s, indent_with):
-    return indent(s, indent_with, lambda line: True)
+    if type(s) == str:
+        return indent(s, indent_with, lambda line: True)
+    else:
+        return ''
 
 
 def snake2camel(s):

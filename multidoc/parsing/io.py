@@ -1,9 +1,9 @@
-from . import logger
+# from . import logger
 import yaml
 from multidoc.regex import p_api_tag
 
 
-def yaml2dict(path, _locals: dict = None, include_name_error=False):
+def yaml2dict(path, include_name_error=False, **kwargs):
     """Yaml file parser.
 
     Parameters
@@ -39,13 +39,13 @@ def yaml2dict(path, _locals: dict = None, include_name_error=False):
     >>> yaml2dict("../tests/example.yaml")
     {'package': None, 'modules': ['module']}
 
-    >>> yaml2dict("../tests/example.yaml", _locals={"cpp":True})
+    >>> yaml2dict("../tests/example.yaml", cpp=True)
     {'package': {'name': 'name-cpp'}, 'modules': ['module', 'module-cpp']}
 
-    >>> yaml2dict("../tests/example.yaml", _locals={"py": True})
+    >>> yaml2dict("../tests/example.yaml", py=True)
     {'package': {'name': 'name-py'}, 'modules': ['module', 'module-py']}
 
-    >>> yaml2dict("../tests/example.yaml", {"cpp": True, "py": False})
+    >>> yaml2dict("../tests/example.yaml", cpp=True, py=False)
     {'package': {'name': 'name-cpp'}, 'modules': ['module', 'module-cpp', 'module-not-py']}
 
 
@@ -56,11 +56,11 @@ def yaml2dict(path, _locals: dict = None, include_name_error=False):
 
     """
     # update the local variable space for eval of tag
-    locals().update(_locals) if _locals else None
+    locals().update(kwargs) if kwargs else None
 
     # open the yaml file!
     with open(path) as file:
-        logger.info(f"Parsing yaml file :{file}")
+        # logger.info(f"Parsing yaml file :{file}")
 
         # read the raw lines
         raw_lines = file.readlines()
@@ -86,3 +86,7 @@ def yaml2dict(path, _locals: dict = None, include_name_error=False):
                 processed_lines += line
         # apply line check truth to all raw lines, retrieving those that return true
         return yaml.load("".join(processed_lines), yaml.Loader)
+
+if __name__== "__main__":
+    d = yaml2dict("../testing/example-1.yaml", cpp=True, py=False)
+    print(d)

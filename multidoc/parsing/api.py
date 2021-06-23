@@ -2,6 +2,7 @@ import re
 import os
 from multidoc.template import render_python_docstring
 from multidoc.template import render_cpp_docstring
+from multidoc.template import get_docstring_template
 from multidoc.parsing.io import yaml2dict
 from multidoc.parsing import logger
 from multidoc.regex import p_package_file, p_module_file
@@ -30,6 +31,50 @@ def parse_function(function, local):
     if "py" in local.keys():
         if local["py"]:
             return render_python_docstring(function)
+
+
+from collections import defaultdict
+
+
+def parse_functions(structure, functions, **kwargs):
+    logger.info(
+        f"Parsing functions: {[function.name for function in functions]} with kwargs: {kwargs}")
+    t = get_docstring_template(**kwargs)
+    result = defaultdict(list)
+    for i, f in enumerate(functions):
+        result[f.name].append(i)
+
+    for k, v in result.items():
+        if len(v) > 1:  # overloaded
+            structure[k] = defaultdict(list)
+            for idx, overload in enumerate(v):
+                structure[k][idx] = t.render(**functions[overload].dict())
+        else:
+            structure[k] = t.render(**functions[v[0]].dict())
+
+    return structure
+
+    # logger.info(f"Parsing class: {cls.name} with locals: {local}")
+    # _return = {}
+    # for method in cls.methods:
+    #     _return[method.name] = parse_method(method, local)
+    # _return["__docstring__"] = parse_method(cls, local)
+    # return _return
+
+
+def parse_classes(structure, classes, **kwargs):
+    logger.info(
+        f"Parsing classes: {[cls.name for cls in classes]} "
+        f"with kwargs: {kwargs}"
+    )
+    t = get_docstring_template(**kwargs)
+    for cls in classes:
+        _result = {}
+        _result.update(parse_functions(cls.dict(), cls.methods, **kwargs))
+        _result.update({"__docstring__": t.render(**cls.dict())})
+        structure[cls.name] = _result
+
+    return structure
 
 
 def parse_method(function, local):
@@ -98,7 +143,7 @@ def parse_constant(constant, local):
 from multidoc.parsing.models import Module, Package
 
 
-def parse_api_declaration(path: str, local: dict = None, parent=None):
+def parse_api_declaration(path: str, parent=None, **kwargs):
     """
 
     Parameters
@@ -112,7 +157,7 @@ def parse_api_declaration(path: str, local: dict = None, parent=None):
 
     """
     structure = dict()
-    local = local if local is not None else dict()
+    local = kwargs if kwargs is not None else dict()
 
     # if directory given, treats it as package declaration
     if os.path.isdir(path):
@@ -127,7 +172,7 @@ def parse_api_declaration(path: str, local: dict = None, parent=None):
             raise ModuleNotFoundError("Multiple __package__.yaml/yml files "
                                       "found in directory path.")
         else:
-            module = Package.from_yaml(os.path.join(path, files[0]), local)
+            module = Package.parse_yaml(os.path.join(path, files[0]), **kwargs)
 
             # define type as package.
             structure["type"] = "package"
@@ -143,7 +188,7 @@ def parse_api_declaration(path: str, local: dict = None, parent=None):
         if extension == ".yaml" or extension == ".yml":
 
             if not p_package_file.match(path):
-                module = Module.from_yaml(path)
+                module = Module.parse_yaml(path)
 
                 # define type as package.
                 structure["type"] = "module"
@@ -152,7 +197,7 @@ def parse_api_declaration(path: str, local: dict = None, parent=None):
                 structure["_implicit_name"] = \
                     os.path.split(os.path.basename(path))[0]
             else:
-                module = Package.from_yaml(path)
+                module = Package.parse_yaml(path)
                 structure["type"] = "package"
                 structure["path"] = os.path.dirname(path)
                 structure["file"] = os.path.basename(path)
@@ -178,8 +223,8 @@ def parse_api_declaration(path: str, local: dict = None, parent=None):
             raise ModuleNotFoundError(f"Multiple {basename}.yaml/yml files "
                                       "found for given path.")
         else:
-            module = Module.from_yaml(
-                os.path.join(os.path.dirname(path), matches[0]), local)
+            module = Module.parse_yaml(
+                os.path.join(os.path.dirname(path), matches[0]), **kwargs)
 
             # define type as package.
             structure["type"] = "module"
@@ -213,13 +258,11 @@ def parse_api_declaration(path: str, local: dict = None, parent=None):
 
     # module level functions
     if module.functions:
-        for function in module.functions:
-            structure[function.name] = parse_function(function, local)
+        structure = parse_functions(structure, module.functions, **local)
 
     # module level functions
     if module.classes:
-        for cls in module.classes:
-            structure[cls.name] = parse_class(cls, local)
+        structure = parse_classes(structure, module.classes, **local)
 
     # module level functions
     if module.constants:
@@ -230,8 +273,9 @@ def parse_api_declaration(path: str, local: dict = None, parent=None):
     if type(module) == Package:
         for submodule in module.modules:
             module_path = os.path.join(structure["path"], submodule)
-            structure[submodule] = parse_api_declaration(module_path, local,
-                                                         parent=structure)
+            structure[submodule] = parse_api_declaration(module_path,
+                                                         parent=structure,
+                                                         **local)
             # TODO: Figure out how to deal with submodule name clashes with
             #  reserved names. Hide all docstrings behind __docs__ key?
 
@@ -240,7 +284,7 @@ def parse_api_declaration(path: str, local: dict = None, parent=None):
 
 if __name__ == "__main__":
     s = parse_api_declaration("../../tests/test-docstrings",
-                              local={"py": True})
+                              py=True)
     if s["summary"]:
         print(s["summary"])
     # print(s)

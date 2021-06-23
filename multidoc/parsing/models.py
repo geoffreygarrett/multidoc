@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from multidoc.parsing.io import yaml2dict
 
+
 #
 # class DocStyle(BaseModel):
 #     pass
@@ -28,6 +29,9 @@ from multidoc.parsing.io import yaml2dict
 # class APIElement(BaseModel):
 #     name: str
 
+class APIDeclaration:
+    pass
+
 
 class FileBased(BaseModel):
     """FileBased declaration ``pydantic.BaseModel`` data structure.
@@ -39,7 +43,25 @@ class FileBased(BaseModel):
     """
 
     @classmethod
-    def from_yaml(cls, path, local: dict = None):
+    def parse_yaml(cls, path, **kwargs):
+        """
+
+        Parameters
+        ----------
+        path
+        local
+
+        Returns
+        -------
+
+        """
+        return cls.parse_obj(yaml2dict(path, **kwargs))
+
+
+class DirBased(FileBased):
+
+    @classmethod
+    def parse_yaml(cls, path, local: dict = None):
         """
 
         Parameters
@@ -313,6 +335,7 @@ class Package(Module):
     # def __init__(self):
     #     super().__init__()
     #
+
 
 if __name__ == "__main__":
     import json

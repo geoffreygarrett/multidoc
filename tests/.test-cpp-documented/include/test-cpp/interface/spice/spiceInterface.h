@@ -47,6 +47,14 @@ namespace spice_interface {
 /// Convert a Julian date to ephemeris time (equivalent to TDB in Spice).
 /**
  * test
+ * The following math is for documentation demonstration purposes  # [cpp]
+ */
+[[deprecated]]
+double convertJulianDateToEphemerisTime(const double julianDate);
+
+/// Convert a Julian date to ephemeris time (equivalent to TDB in Spice).
+/**
+ * test
  * The following math is for documentation demonstration purposes
  * 
  * .. math:: X(e^{j\omega } ) = x(n)e^{ - j\omega n}
@@ -59,7 +67,7 @@ namespace spice_interface {
  *        Julian date that is to be converted to ephemeris time. * @return ephemeris_time 
  */
 [[deprecated]]
-double convertJulianDateToEphemerisTime(const double julianDate);
+double convertJulianDateToEphemerisTime(const int julianDate);
 
 /// Convert ephemeris time (equivalent to TDB) to a Julian date.
 /**

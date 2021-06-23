@@ -26,11 +26,26 @@ classes:
           - name: secondsSinceEpoch    # [cpp]
             type: double               # [cpp]
             description: "Seconds since epoch at which ephemeris is to be evaluated."
+      - name: get_cartesian_state  # [py]
+      - name: getCartesianState    # [cpp]
+        short_summary: "Get Cartesian state from ephemeris."
+        extended_summary: " Returns Cartesian state from ephemeris at given Julian day."
+        parameters:
+          - name: seconds_since_epoch  # [py]
+            type: float                # [py]
+          - name: secondsSinceEpoch    # [cpp]
+            type: double               # [cpp]
+            description: "Seconds since epoch at which ephemeris is to be evaluated."
 
 
 functions:
   - name: "convertJulianDateToEphemerisTime"        # [cpp]
-  - name: "convert_julian_date_to_ephemeris_time"   # [py]
+    short_summary: "Convert a Julian date to ephemeris time (equivalent to TDB in Spice)."   # [cpp]
+    extended_summary: |  # [cpp]
+      The following math is for documentation demonstration purposes  # [cpp]
+    deprecation_warning:  # [cpp]
+      "test"  # [cpp]
+  - name: "convertJulianDateToEphemerisTime"
     deprecation_warning:
       "test"
     short_summary: "Convert a Julian date to ephemeris time (equivalent to TDB in Spice)."

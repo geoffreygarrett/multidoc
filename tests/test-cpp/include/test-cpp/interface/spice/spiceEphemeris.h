@@ -41,7 +41,11 @@ public:
                     const std::string& referenceFrameName = "ECLIPJ2000",
                     const double referenceJulianDay = basic_astrodynamics::JULIAN_DAY_ON_J2000 );
 
-    //! @get_docstring(SpiceEphemeris.getCartesianState)
+
+    //! @get_docstring(SpiceEphemeris.getCartesianState, 0)
+    Eigen::Vector6d getCartesianState( const double secondsSinceEpoch );
+
+    //! @get_docstring(SpiceEphemeris.getCartesianState, 1)
     Eigen::Vector6d getCartesianState( const double secondsSinceEpoch );
 
 private:

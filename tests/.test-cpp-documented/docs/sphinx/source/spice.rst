@@ -13,6 +13,8 @@ Functions
 
 .. doxygenfunction:: test-cpp::interface::spice::convertjuliandatetoephemeristime
 
+.. doxygenfunction:: test-cpp::interface::spice::convertjuliandatetoephemeristime
+
 .. doxygenfunction:: test-cpp::interface::spice::convertEphemerisTimeToJulianDate
 
 .. doxygenfunction:: test-cpp::interface::spice::convertDateStringToEphemerisTime

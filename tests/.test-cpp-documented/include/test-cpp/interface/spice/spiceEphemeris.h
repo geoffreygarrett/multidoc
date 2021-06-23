@@ -48,13 +48,19 @@ public:
                     const std::string& referenceFrameName = "ECLIPJ2000",
                     const double referenceJulianDay = basic_astrodynamics::JULIAN_DAY_ON_J2000 );
 
+
     /// Get Cartesian state from ephemeris.
     /**
-     * Returns Cartesian state from ephemeris at given Julian day.
-     *
+     *  Returns Cartesian state from ephemeris at given Julian day. *
      * @param secondsSinceEpoch
-     *        Seconds since epoch at which ephemeris is to be evaluated.
-     */
+     *        Seconds since epoch at which ephemeris is to be evaluated. */
+    Eigen::Vector6d getCartesianState( const double secondsSinceEpoch );
+
+    /// Get Cartesian state from ephemeris.
+    /**
+     *  Returns Cartesian state from ephemeris at given Julian day. *
+     * @param secondsSinceEpoch
+     *        Seconds since epoch at which ephemeris is to be evaluated. */
     Eigen::Vector6d getCartesianState( const double secondsSinceEpoch );
 
 private:
