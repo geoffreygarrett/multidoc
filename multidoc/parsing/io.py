@@ -1,5 +1,8 @@
-# from . import logger
+import os
+
+from . import logger
 import yaml
+from yaml.parser import ParserError, ScannerError
 from multidoc.regex import p_api_tag
 
 
@@ -57,7 +60,7 @@ def yaml2dict(path, include_name_error=False, **kwargs):
     """
     # update the local variable space for eval of tag
     locals().update(kwargs) if kwargs else None
-
+    logger.info(f"Parsing yaml file: {path} with kwargs: {kwargs}")
     # open the yaml file!
     with open(path) as file:
         # logger.info(f"Parsing yaml file :{file}")
@@ -85,8 +88,16 @@ def yaml2dict(path, include_name_error=False, **kwargs):
             else:
                 processed_lines += line
         # apply line check truth to all raw lines, retrieving those that return true
-        return yaml.load("".join(processed_lines), yaml.Loader)
+        try:
+            return yaml.load("".join(processed_lines), yaml.Loader)
+        except (ParserError, ScannerError) as e:
+            broken_path = f"BROKEN-{kwargs}-{os.path.basename(path)}"
+            with open(broken_path, "w") as f:
+                f.write("".join(processed_lines))
+            logger.error(f"Broken .yaml file {path} dumped as {broken_path}.")
+            raise e
 
-if __name__== "__main__":
+
+if __name__ == "__main__":
     d = yaml2dict("../testing/example-1.yaml", cpp=True, py=False)
     print(d)
