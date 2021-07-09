@@ -232,7 +232,7 @@ class Class(BaseModel):
     deprecation_warning: Optional[str]
     extended_summary: Optional[str]
     parameters: Optional[List[Parameter]]
-    attributes: Optional[str]
+    attributes: Optional[List[Parameter]]
     yields: Optional[List[Yields] or Yields]
     other_parameters: Optional[List[Parameter] or Parameter]
     raises: Optional[List[Raises] or Raises]
