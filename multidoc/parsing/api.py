@@ -6,6 +6,21 @@ from multidoc.template import get_docstring_template
 from multidoc.parsing.io import yaml2dict
 from multidoc.parsing import logger
 from multidoc.regex import p_package_file, p_module_file
+import pathlib
+
+def guess_project_type(project_src):
+    logger.warning(f"GUESSING project type, because `project_type` was not found for src {project_src}!")
+    files_cpp = pathlib.Path(project_src).glob("*.cpp|*.h|*.hpp")
+    files_py = pathlib.Path(project_src).glob("*.py")
+
+    # should check cpp for pybind headers.
+    # header_pybind =
+    if files_cpp and files_py:
+        return "py"
+    elif files_cpp:
+        return "cpp"
+    elif files_py:
+        return "py"
 
 
 def parse_function(function, local):
@@ -37,8 +52,10 @@ from collections import defaultdict
 
 
 def parse_functions(structure, functions, **kwargs):
+    nl = '\n'
     logger.info(
-        f"Parsing functions: {[function.name for function in functions]} with kwargs: {kwargs}")
+        f"Parsing the following functions with {kwargs}: {nl}{nl.join([r'    - '+ function.name for function in functions] + [''])} "
+    )
     t = get_docstring_template(**kwargs)
     result = defaultdict(list)
     for i, f in enumerate(functions):
@@ -47,8 +64,11 @@ def parse_functions(structure, functions, **kwargs):
     for k, v in result.items():
         if len(v) > 1:  # overloaded
             structure[k] = defaultdict(list)
+            structure[k]["overloaded"] = True
+            structure[k]["overloads"] = len(v)
             for idx, overload in enumerate(v):
                 structure[k][idx] = t.render(**functions[overload].dict())
+            structure[k] = dict(structure[k])
         else:
             structure[k] = t.render(**functions[v[0]].dict())
 
@@ -63,14 +83,15 @@ def parse_functions(structure, functions, **kwargs):
 
 
 def parse_classes(structure, classes, **kwargs):
+    nl = '\n'
     logger.info(
-        f"Parsing classes: {[cls.name for cls in classes]} "
-        f"with kwargs: {kwargs}"
+        f"Parsing the following classes with {kwargs}: {nl}{nl.join([r'    - '+cls.name for cls in classes] + [''])} "
     )
     t = get_docstring_template(**kwargs)
     for cls in classes:
         _result = {}
-        _result.update(parse_functions(cls.dict(), cls.methods, **kwargs))
+        if cls.methods:
+            _result.update(parse_functions(cls.dict(), cls.methods, **kwargs))
         _result.update({"__docstring__": t.render(**cls.dict())})
         structure[cls.name] = _result
 

@@ -10,10 +10,11 @@ from multidoc.utils import parts, indent_line, snake2pascal, recurse_dict
 from multidoc.error import *
 
 
-def _generate_documented(target_src, force_overwrite=True):
+def _generate_documented(target_src, force_overwrite=True, dest=None):
     path = Path(target_src)
     base = os.path.basename(path)
-    dest = os.path.join(path, "..", "." + base + "-documented")
+    if dest is None:
+        dest = os.path.join(path, "..", "." + base + "-documented")
     if force_overwrite:
         if os.path.exists(dest):
             shutil.rmtree(dest)
@@ -38,16 +39,21 @@ def generate_docstring_header(api_declaration,
     """
     # read docstrings template
     with open(template_path, "r") as f:
-        t = jinja2.Template(f.read())
+        t = jinja2.Template(f.read(),
+                            lstrip_blocks=True,
+                            trim_blocks=True)
 
     # generate docstring file
     with open(destination, "w") as f:
+        import json
+        with open("json.json", "w") as ff:
+            ff.write(json.dumps(api_declaration, indent=4))
         f.write(t.render(api_structure=api_declaration))
 
 
-def generate_cpp_docstring(api_prefix, include_path, dest):
+def generate_cpp_docstring(api_declaration, include_path, dest):
     # load structure from api definition
-    structure = parse_api_declaration(api_prefix, cpp=True)
+    structure = api_declaration
 
     for path in Path(include_path).rglob("*.h"):
         _parts = parts(path)
@@ -117,26 +123,27 @@ def generate_cpp_docstring(api_prefix, include_path, dest):
             f2.write(processed)
 
 
-def generate_cpp_documented(api_prefix, target_src):
-    path_documented, name = _generate_documented(target_src)
-    generate_cpp_docstring(api_prefix=api_prefix,
+def generate_cpp_documented(api_prefix, target_src, dest=None):
+    path_documented, name = _generate_documented(target_src, dest=dest)
+    api_declaration=parse_api_declaration(api_prefix, cpp=True)
+    generate_cpp_docstring(api_declaration=api_declaration,
                            dest=os.path.join(path_documented,
                                              f"include/{name}"),
                            include_path=os.path.join(target_src, "include"))
-    generate_cpp_sphinx(api_prefix=api_prefix,
+    generate_cpp_sphinx(api_declaration=api_declaration,
                         dest_dir=os.path.join(path_documented, 'docs',
                                               'sphinx', 'source'))
 
 
 def generate_cpp_sphinx(
-        dest_dir, api_prefix,
+        dest_dir, api_declaration,
         template=os.path.join(TEMPLATE_DIR, "cpp-sphinx-module.jinja2")):
     if not os.path.exists(dest_dir):
         # shutil.rmtree(dest_dir)
         os.makedirs(dest_dir)
 
     # load api declaration structure
-    structure = parse_api_declaration(api_prefix, cpp=True)
+    structure = api_declaration
     # print(json.dumps(structure, indent=4))  # for inspection of structure
     with open(template, "r") as f:
         t = jinja2.Template(f.read())
@@ -176,13 +183,13 @@ def generate_cpp_sphinx(
 
 
 def generate_py_sphinx(
-        dest_dir, api_prefix,
+        dest_dir, api_declaration,
         template=os.path.join(TEMPLATE_DIR, "py-sphinx-module.jinja2")):
     if not os.path.exists(dest_dir):
         os.makedirs(dest_dir)
 
     # load api declaration structure
-    structure = parse_api_declaration(api_prefix, py=True)
+    structure = api_declaration
 
     # read pybind docstrings template
     with open(template, "r") as f:
@@ -220,15 +227,16 @@ def generate_py_sphinx(
         recurse(structure[module], namespace_list=namespace_list + [module])
 
 
-def generate_pybind_documented(api_prefix, target_src):
-    path_documented, name = _generate_documented(target_src)
+def generate_pybind_documented(api_prefix, target_src, dest=None):
+    api_declaration = parse_api_declaration(api_prefix, py=True)
+    path_documented, name = _generate_documented(target_src, dest=dest)
     generated_header_dir = os.path.join(path_documented, f"include/{name}")
     if not os.path.exists(generated_header_dir):
         os.makedirs(generated_header_dir)
-    generate_docstring_header(api_prefix, os.path.join(generated_header_dir,
+    generate_docstring_header(api_declaration, os.path.join(generated_header_dir,
                                                        "docstrings.h"))
     # print(os.path.join(path_documented, 'docs', 'source'))
-    generate_py_sphinx(api_prefix=api_prefix,
+    generate_py_sphinx(api_declaration=api_declaration,
                        dest_dir=os.path.join(path_documented, 'docs',
                                              'source'))
 
