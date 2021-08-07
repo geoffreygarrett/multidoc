@@ -131,7 +131,7 @@ class Returns(BaseModel):
 
     name: Optional[str]
     type: Optional[str]
-    description: str
+    description: Optional[str]
 
 
 class Yields(BaseModel):
