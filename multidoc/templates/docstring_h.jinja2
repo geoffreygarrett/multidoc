@@ -24,6 +24,13 @@ static inline std::string get_docstring(std::string name, int variant=0) {
 {% if structure.classes is not none %}
 {% for class in structure.classes %}
 
+    } else if(name == "{{ class.name }}") {
+         return R"(
+             {% filter indent(8) -%}
+             {{ structure[class.name]['__docstring__'] | safe }}
+             {%- endfilter %}
+     )";
+
 {% if structure[class.name].methods is not none %}
 {% for method in structure[class.name].methods %}
 
