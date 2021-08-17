@@ -5,109 +5,89 @@
 {% endmacro %}
 {%- macro recurse(structure) %}
 
-{% if structure.name is in ["tudatpy", "interface", "spice", "simulation", "environment_setup", "propagation_setup"] %}
-
 namespace {{ structure.name }} {
 
-    static inline std::string get_docstring(std::string name, int variant=0) {
+static inline std::string get_docstring(std::string name, int variant=0) {
 
-        if (name == "test") {
-            return "test";
+    if (name == "test") {
+        return "test";
+
+{% if structure.constants is not none %}
+{% for constant in structure.constants %}
+
+    } else if(name == "{{ constant.name }}") {
+        return {{ structure[constant.name] | safe }};
+
+{% endfor %}
+{% endif %}
+
+{% if structure.classes is not none %}
+{% for class in structure.classes %}
+
+{% if structure[class.name].methods is not none %}
+{% for method in structure[class.name].methods %}
+
+{%- if structure[class.name][method.name].overloaded %}
+{%- for v in range(structure[class.name][method.name].overloads) %}
+
+    } else if(name == "{{ class.name }}.{{ method.name }}" && variant=={{ v }}) {
+            return R"(
+            {% filter indent(8) -%}
+            {{ structure[class.name][method.name][v] | safe }}
+            {%- endfilter %}
+    )";
+
+{% endfor %}
+{%- else %}
+
+    } else if(name == "{{ class.name }}.{{ method.name }}" && variant==0) {
+            return R"(
+            {% filter indent(8) -%}
+            {{ structure[class.name][method.name] | safe }}
+            {%- endfilter %}
+    )";
 
 {% endif %}
 
-            {% if structure.constants is not none %}
-            {% for constant in structure.constants %}
+{% endfor %}
+{% endif %}
 
-        } else if(name == "{{ constant.name }}") {
-            return {{ structure[constant.name] | safe }};
+{% endfor %}
+{% endif %}
 
-            {% endfor %}
-            {% endif %}
+{% if structure.functions is not none %}
+{% for function in structure.functions %}
 
-            {% if structure.classes is not none %}
-            {% for class in structure.classes %}
+{%- if structure[function.name].overloaded %}
+{%- for v in range(structure[function.name].overloads) %}
 
-        } else if(name == "{{ class.name }}") {
+    } else if(name == "{{ function.name }}" && variant=={{ v }}) {
             return R"(
-                {% filter indent(8) -%}
-                {{ structure[class.name]['__docstring__'] | safe }}
-                {%- endfilter %}
-        )";
+            {% filter indent(8) -%}
+            {{ structure[function.name][v] | safe }}
+            {%- endfilter %}
+    )";
 
-            {% if structure[class.name].methods is not none %}
-            {% for method in structure[class.name].methods %}
+{% endfor %}
+{%- else %}
 
-            {%- if structure[class.name][method.name].overloaded %}
-            {%- for v in range(structure[class.name][method.name].overloads) %}
-
-        } else if(name == "{{ class.name }}.{{ method.name }}" && variant=={{ v }}) {
+    } else if(name == "{{ function.name }}" && variant==0) {
             return R"(
-                {% filter indent(8) -%}
-                {{ structure[class.name][method.name][v] | safe }}
-                {%- endfilter %}
-        )";
+            {% filter indent(8) -%}
+            {{ structure[function.name] | safe }}
+            {%- endfilter %}
+    )";
 
-            {% endfor %}
-            {%- else %}
+{% endif %}
 
-        } else if(name == "{{ class.name }}.{{ method.name }}" && variant==0) {
-            return R"(
-                {% filter indent(8) -%}
-                {{ structure[class.name][method.name] | safe }}
-                {%- endfilter %}
-        )";
+{% endfor %}
+{% endif %}
 
-            {% endif %}
-
-            {% endfor %}
-            {% endif %}
-
-            {% endfor %}
-            {% endif %}
-
-            {% if structure.functions is not none %}
-            {% for function in structure.functions %}
-
-            {%- if structure[function.name].overloaded %}
-            {%- for v in range(structure[function.name].overloads) %}
-    // TODO: I replaced the `,` to `&&`
-        } else if(name == "{{ function.name }}" && variant=={{ v }}) {
-            return R"(
-                {% filter indent(8) -%}
-                {{ structure[function.name][v] | safe }}
-                {%- endfilter %}
-        )";
-
-            {% endfor %}
-            {%- else %}
-
-        } else if(name == "{{ function.name }}" && variant==0) {
-            return R"(
-                {% filter indent(8) -%}
-                {{ structure[function.name] | safe }}
-                {%- endfilter %}
-        )";
-
-            {% endif %}
-
-            {% endfor %}
-            {% endif %}
-
-
-            {% if structure.name is in ["tudatpy", "interface", "spice", "simulation", "torque", "rotation_model"] %}
-
-        } else {
+    } else {
         return "No documentation found.";
-        }
-
-
     }
 
 }
-
-            {% endif %}
-
 
 {% if structure.modules is not none %}
 {% for submodule in structure.modules %}
@@ -116,6 +96,8 @@ namespace {{ structure.name }} {
 
 {% endfor %}
 {% endif %}
+
+}
 
 {% endmacro %}
 

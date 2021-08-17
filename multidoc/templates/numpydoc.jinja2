@@ -41,7 +41,7 @@ Returns
 {{ returns.name }}
 {% endif %}
 {% if returns.type or returns.name %}
-{% filter indent(4) %}
+{% filter indent(4, first=True) %}
 {{ returns.description }}
 {% endfilter %}
 {% else %}
