@@ -59,7 +59,6 @@ def parse_properties(structure, properties, **kwargs):
     )
     t = get_property_template(**kwargs)
     for i, property in enumerate(properties):
-        print(property)
         structure[property.name] = t.render(**property.dict())
     return structure
 
@@ -107,7 +106,6 @@ def parse_enums(structure, enums, **kwargs):
         if enum.members:
             for member in enum.members:
                 _result.update({member.name: t.render(**member.dict())})
-                print({member.name: t.render(**member.dict())})
         _result.update({"__docstring__": t_general.render(**enum.dict())})
         _result.update(enum.dict())
         structure[enum.name] = _result
@@ -128,6 +126,8 @@ def parse_classes(structure, classes, **kwargs):
         if cls.properties:
             _result.update(parse_properties(cls.dict(), cls.properties, **kwargs))
         _result.update({"__docstring__": t.render(**cls.dict())})
+        if cls.autoclass:
+            _result.update({"autoclass": cls.dict()["autoclass"]})
         structure[cls.name] = _result
 
     return structure
@@ -323,11 +323,6 @@ def parse_api_declaration(path: str, parent=None, **kwargs):
     # module level enumerations
     if module.enums:
         structure = parse_enums(structure, module.enums, **local)
-        import json
-        print(json.dumps(structure, indent=4))
-
-
-
 
     # module level functions
     if module.constants:
