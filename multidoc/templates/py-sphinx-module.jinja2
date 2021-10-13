@@ -54,6 +54,15 @@ Functions
 {% endfor %}
 {% endif %}
 
+{% if structure.enums %}
+Enums
+-----
+{% for  enum in structure.enums %}
+.. autoclass:: {{  namespace_list|join(".") }}.{{ enum.name }}
+   :members:
+{% endfor %}
+{% endif %}
+
 {% if structure.classes %}
 Classes
 -------

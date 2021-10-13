@@ -217,6 +217,11 @@ class Function(BaseModel):
     references: Optional[str]
     examples: Optional[str]
 
+class EnumMember(BaseModel):
+    name: str
+    description: Optional[str]
+    value: Optional[int]
+
 
 class Class(BaseModel):
     """Class docstring ``pydantic.BaseModel`` data structure.
@@ -259,6 +264,12 @@ class Class(BaseModel):
     references: Optional[str]
     examples: Optional[str]
     methods: Optional[List[Function]]
+
+class Enum(BaseModel):
+    name: str
+    short_summary: Optional[str]
+    extended_summary: Optional[str]
+    members: Optional[List[EnumMember]]
 
 
 class Constant(BaseModel):
@@ -322,6 +333,7 @@ class Module(FileBased):
     examples: Optional[str]
 
     # MODULE structure
+    enums: Optional[List[Enum]]
     classes: Optional[List[Class]]
     functions: Optional[List[Function]]
     constants: Optional[List[Constant]]
