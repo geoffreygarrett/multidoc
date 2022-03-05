@@ -1,4 +1,5 @@
 from setuptools import setup
+import setuptools
 
 setup(name='multidoc',
       version='0.0.1',
@@ -8,7 +9,7 @@ setup(name='multidoc',
       author='geoffreygarrett',
       author_email='geoffreygarrett99@gmail.com',
       license='MIT',
-      packages=['multidoc'],
+      packages=setuptools.find_packages(),
       zip_safe=False,
       install_requires=[
           'jinja2',

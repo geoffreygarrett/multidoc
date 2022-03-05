@@ -17,5 +17,6 @@ __all__ = [
     "generate",
     "template",
     "testing",
-    "regex"
+    "regex",
+    "utils",
 ]
