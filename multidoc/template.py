@@ -2,8 +2,13 @@ import os
 from jinja2 import Template
 import jinja2
 from multidoc.utils import indent_line
-# from multidoc.parsing.models import APIDeclaration
+from multidoc import logger
 import re
+import logging
+
+log = logging.getLogger('root')
+log.setLevel('DEBUG')
+log.addHandler(logger.MyHandler())
 
 __languages__ = [
     'cpp',
@@ -11,7 +16,37 @@ __languages__ = [
 
 # constants ------------------------------------------------------------------#
 # template dir for default templates
-TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")
+# if source
+candidate_template_dirs = [
+    os.path.join(os.path.dirname(__file__), 'templates'),  # source
+    os.path.join(os.path.dirname(__file__), '../../../../share/templates'),
+    # unix
+    os.path.join(os.path.dirname(__file__), '../../../../../share/templates'),
+    # win
+]
+
+candidate_variable_dirs = [
+    ('CONDA_PREFIX', 'share/templates'),  # shouldn't be needed with the
+    #  above, just in case. (wont work
+    #  without executing with conda env
+    #  activated
+    ('MULTIDOC_TEMPLATE_DIR', ''),  # if a dev wants to set a custom set
+    #  of templates  (e.g. for testing)
+]
+
+for var, dir in candidate_variable_dirs:
+    if var in os.environ:
+        candidate_template_dirs.insert(0, os.path.join(os.environ[var], dir))
+
+for template_dir in candidate_template_dirs:
+    if os.path.isdir(template_dir):
+        TEMPLATE_DIR = template_dir
+        log.info('Using template dir: {}'.format(TEMPLATE_DIR))
+        break
+else:
+    raise RuntimeError('No template directory found')
+
+# TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")
 
 # template mapping for language docstring templates
 TEMPLATE_LANGUAGE_MAP = {"cpp": os.path.join(TEMPLATE_DIR, "cpp.jinja2"),
